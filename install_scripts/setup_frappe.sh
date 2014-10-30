@@ -1,7 +1,10 @@
+#!/bin/bash
 set -e
 
 get_distro() {
-	ARCH=$(uname -m | sed 's/x86_/amd/;s/i[3-6]86/x86/') 
+
+	ARCH=$(uname -m | sed 's/x86_/amd/;s/i[3-6]86/x86/')
+
 	if [ -f /etc/redhat-release ]; then
 		OS="centos"
 		OS_VER=`cat /etc/redhat-release | cut -d" " -f3 | cut -d "." -f1`
@@ -15,6 +18,7 @@ get_distro() {
 		. /etc/os-release
 		OS="debian"  # XXX or Ubuntu??
 		OS_VER=$VERSION_ID
+
 	fi
 
 	export OS=$OS
