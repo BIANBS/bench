@@ -1,10 +1,10 @@
 [
   {
-    "url":"https://github.com/frappe/erpnext",
+    "url":"https://github.com/BIANBS/erpnext",
     "name":"erpnext"
   },
   {
-    "url":"https://github.com/frappe/shopping-cart",
+    "url":"https://github.com/BIANBS/shopping-cart",
     "name":"shopping_cart"
   }
 ]
