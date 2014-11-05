@@ -7,7 +7,7 @@ get_distro() {
 
 	if [ -f /etc/redhat-release ]; then
 		OS="centos"
-		OS_VER=`cat /etc/redhat-release | cut -d" " -f3 | cut -d "." -f1`
+		OS_VER=`cat /etc/redhat-release | sed 's/Linux\ //g' | cut -d" " -f3 | cut -d. -f1`
 
 	elif [ -f /etc/lsb-release ]; then
 		. /etc/lsb-release
@@ -80,7 +80,7 @@ add_maria_db_repo() {
 }
 
 install_packages() {
-	if [ $OS == "centos" ]; then
+	if [ $OS == "centos" ] && [ $OS_VER == "6" ]; then
 		sudo yum install wget -y
 		add_ius_repo
 		sudo yum groupinstall -y "Development tools"
@@ -89,13 +89,22 @@ install_packages() {
 		sudo rpm -Uvh wkhtmltox-0.12.1_linux-centos6-amd64.rpm
 		easy_install-2.7 -U pip
 	
+	elif [ $OS == "centos" ] && [ $OS_VER == "7" ]; then
+		sudo yum install wget -y
+		add_epel_centos7
+		sudo yum groupinstall -y "Development tools"
+		sudo yum install -y git mariadb-server mariadb-server mariadb-devel python-setuptools nginx zlib-devel bzip2-devel openssl-devel memcached postfix python-devel libxml2 libxml2-devel libxslt libxslt-devel redis libXrender libXext supervisor
+		wget http://downloads.sourceforge.net/project/wkhtmltopdf/0.12.1/wkhtmltox-0.12.1_linux-centos6-amd64.rpm
+		sudo rpm -Uvh wkhtmltox-0.12.1_linux-centos6-amd64.rpm
+		easy_install-2.7 -U pip
+	
 	elif [ $OS == "debian" ]; then 
 		sudo apt-get update
-		sudo apt-get install python-dev python-setuptools build-essential python-mysqldb git memcached ntp vim screen htop mariadb-server mariadb-common libmariadbclient-dev  libxslt1.1 libxslt1-dev redis-server libssl-dev libcrypto++-dev postfix nginx supervisor python-pip -y 
+		sudo apt-get install python-dev python-setuptools build-essential python-mysqldb git memcached ntp vim screen htop mariadb-server mariadb-common libmariadbclient-dev  libxslt1.1 libxslt1-dev redis-server libssl-dev libcrypto++-dev postfix nginx supervisor python-pip fontconfig libxrender1 -y
 
 	elif [ $OS == "Ubuntu" ]; then 
 		sudo apt-get update
-		sudo apt-get install python-dev python-setuptools build-essential python-mysqldb git memcached ntp vim screen htop mariadb-server mariadb-common libmariadbclient-dev  libxslt1.1 libxslt1-dev redis-server libssl-dev libcrypto++-dev postfix nginx supervisor python-pip -y 
+		sudo apt-get install python-dev python-setuptools build-essential python-mysqldb git memcached ntp vim screen htop mariadb-server mariadb-common libmariadbclient-dev  libxslt1.1 libxslt1-dev redis-server libssl-dev libcrypto++-dev postfix nginx supervisor python-pip fontconfig libxrender1 -y
 	else
 		echo Unsupported Distribution
 		exit 1
@@ -106,7 +115,7 @@ add_user() {
 # Check if script is running as root and is not running as sudo. We want to skip
 # this step if the user is already running this script with sudo as a non root
 # user
-	if [ -z $SUDO_UID ] && [ $EUID -eq "0" ]; then
+	if [ $SUDO_UID -eq 0 ] && [ $EUID -eq 0 ]; then
 		useradd -m -d /home/frappe -s $SHELL frappe
 		chmod o+x /home/frappe
 		chmod o+r /home/frappe
@@ -146,6 +155,13 @@ start_services_centos() {
 	service memcached start
 }
 
+start_services_centos7() {
+	systemctl start nginx
+	systemctl start mariadb
+	systemctl start redis
+	systemctl start supervisord
+}
+
 configure_services_centos() {
 	chkconfig --add supervisord
 	chkconfig redis on
@@ -153,6 +169,14 @@ configure_services_centos() {
 	chkconfig nginx on
 	chkconfig supervisord on
 }
+
+configure_services_centos7() {
+	systemctl enable nginx
+	systemctl enable mariadb
+	systemctl enable redis
+	systemctl enable supervisord
+}
+
 
 add_ius_repo() {
 	if [ $ARCH == "amd64" ]; then
@@ -166,6 +190,10 @@ add_ius_repo() {
 	rpm -Uvh epel-release-6-5.noarch.rpm
 	rpm -Uvh ius-release-1.0-13.ius.centos6.noarch.rpm
 	fi
+}
+
+add_epel_centos7() {
+	yum install -y epel-release
 }
 
 install_bench() {
@@ -183,16 +211,23 @@ install_bench() {
 		exit 1
 	fi
 	sudo $PIP install -e /home/$FRAPPE_USER/bench-repo
+	# temp MariaDB fix
+	sudo bench patch mariadb-config
 }
 
 get_distro
 add_maria_db_repo
 install_packages
 add_user
-if [ $OS == "centos" ]; then
+if [ $OS == "centos" ] && [ $OS_VER == "6"]; then
 	install_supervisor_centos
 	configure_services_centos
 	start_services_centos
+	configure_mariadb_centos
+fi
+if [ $OS == "centos" ] && [ $OS_VER == "7"]; then
+	configure_services_centos7
+	start_services_centos7
 	configure_mariadb_centos
 fi
 install_bench

@@ -13,7 +13,7 @@ Installation
 Easy way
 --------
 
-Supported for CentOS 6, Debian 7 and Ubuntu 12.04+
+Supported for CentOS 6, CentOS 7, Debian 7 and Ubuntu 12.04+
 
 Open your Terminal and enter:
 
@@ -88,6 +88,10 @@ Basic Usage
 	To start using the bench, use the `bench start` command
 
 		bench start
+
+	To login to Frappe / ERPNext, open your browser and go to `localhost:8000`
+	
+	The default user name is "Administrator" and password is what you set when you created the new site.
 
 
 Setting Up ERPNext
@@ -195,6 +199,12 @@ eg,
 ```
 bench setup supervisor
 sudo ln -s `pwd`/config/supervisor.conf /etc/supervisor/conf.d/frappe.conf
+```
+
+Note: For CentOS 7, the extension should be `ini`, thus the command becomes
+```
+bench setup supervisor 
+sudo ln -s `pwd`/config/supervisor.conf /etc/supervisor/conf.d/frappe.ini #for CentOS 7 only
 ```
 
 The bench will also need to restart the processes managed by supervisor when you

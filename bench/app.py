@@ -1,5 +1,5 @@
 import os
-from .utils import exec_cmd, get_frappe, check_git_for_shallow_clone, get_config, build_assets, restart_supervisor_processes
+from .utils import exec_cmd, get_frappe, check_git_for_shallow_clone, get_config, build_assets, restart_supervisor_processes, get_cmd_output
 
 import logging
 import requests
@@ -31,11 +31,12 @@ def get_app(app, git_url, branch=None, bench='.'):
 				shallow_clone=shallow_clone,
 				branch=branch),
 			cwd=os.path.join(bench, 'apps'))
+	print 'installing', app
 	install_app(app, bench=bench)
 	build_assets(bench=bench)
 	conf = get_config()
 	if conf.get('restart_supervisor_on_update'):
-		restart_supervisor_on_update(bench=bench)
+		restart_supervisor_processes(bench=bench)
 
 def new_app(app, bench='.'):
 	logger.info('creating new app {}'.format(app))
@@ -46,7 +47,7 @@ def install_app(app, bench='.'):
 	logger.info('installing {}'.format(app))
 	conf = get_config()
 	find_links = '--find-links={}'.format(conf.get('wheel_cache_dir')) if conf.get('wheel_cache_dir') else ''
-	exec_cmd("{pip} install {find_links} -e {app}".format(
+	exec_cmd("{pip} install -q {find_links} -e {app}".format(
 				pip=os.path.join(bench, 'env', 'bin', 'pip'),
 				app=os.path.join(bench, 'apps', app),
 				find_links=find_links))
@@ -60,7 +61,10 @@ def pull_all_apps(bench='.'):
 		app_dir = os.path.join(apps_dir, app)
 		if os.path.exists(os.path.join(app_dir, '.git')):
 			logger.info('pulling {0}'.format(app))
-			exec_cmd("git pull {rebase} upstream HEAD".format(rebase=rebase), cwd=app_dir)
+			exec_cmd("git pull {rebase} upstream {branch}".format(rebase=rebase, branch=get_current_branch(app_dir)), cwd=app_dir)
+
+def get_current_branch(repo_dir):
+	return get_cmd_output("basename $(git symbolic-ref -q HEAD)", cwd=repo_dir)
 
 def install_apps_from_path(path, bench='.'):
 	apps = get_apps_json(path)
