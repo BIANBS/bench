@@ -104,7 +104,7 @@ cd ~
 bench init frappe-bench
 cd frappe-bench
 bench get-app erpnext https://github.com/BIANBS/erpnext				# Add ERPNext to your bench apps
-bench get-app shopping_cart https://github.com/BIANBS/shopping-cart	# Add Shopping cart to your bench apps
+bench get-app shopping_cart https://github.com/BIANBS/shopping_cart	# Add Shopping cart to your bench apps
 bench new-site site1.local											# Create a new site
 bench frappe --install_app erpnext site1.local						# Install ERPNext for the site
 bench frappe --install_app shopping_cart site1.local				# Install Shopping cart for the site
